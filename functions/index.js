@@ -157,3 +157,52 @@ exports.cfn_deleteUser = functions.https.onCall(async (uid,context) => {
         throw new functions.https.HttpsError('internal',`deleteUser failed: ${JSON.stringify(e)}`);
     }
 });
+//SaiRam Vadlani - Search by Name
+exports.cfn_searchProductList = functions.https.onCall(async (data, context) => {
+    if(!authorized(context.auth.token.email)){
+        if(Constants.DEV) console.log(e);
+        throw new functions.HttpsError('permission-denied','Only admin may invoke searchProductList function');
+    }
+    try{
+        let products = [];
+        const snapShot = await admin.firestore().collection(Constants.COLLECTION_NAMES.PRODUCTS)
+                                .orderBy('name')
+                                .get();
+        snapShot.forEach(doc => {            
+            const{name, price, summary, imageName, imageURL} = doc.data();
+            const p = {name, price, summary, imageName, imageURL};
+            if(p.name.toLowerCase().indexOf(data) != -1)
+            {
+                p.docId = doc.id;
+                products.push(p);
+            }
+        })
+        return products;
+    }catch(e){
+        if(Constants.DEV) console.log(e);
+        throw new functions.https.HttpsError('internal',`Only admin may invoke searchProductList failed: ${JSON.stringify(e)}`);
+    }
+});
+//SaiRam Vadlani - Sort by Product Price
+exports.cfn_getProductListByPrice = functions.https.onCall(async (data, context) => {
+    if(!authorized(context.auth.token.email)){
+        if(Constants.DEV) console.log(e);
+        throw new functions.HttpsError('permission-denied','Only admin may invoke getProductList function');
+    }
+    try{
+        let products = [];
+        const snapShot = await admin.firestore().collection(Constants.COLLECTION_NAMES.PRODUCTS)
+                                .orderBy('price')
+                                .get();
+        snapShot.forEach(doc => {
+            const{name, price, summary, imageName, imageURL} = doc.data();
+            const p = {name, price, summary, imageName, imageURL};
+            p.docId = doc.id;
+            products.push(p);
+        })
+        return products;
+    }catch(e){
+        if(Constants.DEV) console.log(e);
+        throw new functions.https.HttpsError('internal',`Only admin may invoke getProductList failed: ${JSON.stringify(e)}`);
+    }
+});
